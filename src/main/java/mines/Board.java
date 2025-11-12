@@ -4,6 +4,7 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.Random;
 
 import javax.swing.ImageIcon;
@@ -44,14 +45,97 @@ public class Board extends JPanel {
         this.statusbar = statusbar;
         img = new Image[NUM_IMAGES];
 
+        // Chargement sécurisé des images avec plusieurs chemins possibles
         for (int i = 0; i < NUM_IMAGES; i++) {
-            img[i] = (new ImageIcon(getClass().getClassLoader()
-                    .getResource("images/" + i + ".gif"))).getImage();
+            img[i] = loadImage(i);
         }
 
         setDoubleBuffered(true);
         addMouseListener(new MinesAdapter());
         newGame();
+    }
+
+    /**
+     * Charge une image avec plusieurs chemins de recherche
+     */
+    private Image loadImage(int index) {
+        String[] paths = {
+            "/" + index + ".gif",              // Racine du classpath
+            "/images/" + index + ".gif",       // Dans dossier images
+            "images/" + index + ".gif",        // Relatif
+            index + ".gif"                     // Direct
+        };
+        
+        for (String path : paths) {
+            try {
+                java.net.URL imgURL = getClass().getResource(path);
+                if (imgURL != null) {
+                    return (new ImageIcon(imgURL)).getImage();
+                }
+            } catch (Exception e) {
+                // Continuer avec le prochain chemin
+            }
+        }
+        
+        // Si aucune image trouvée, créer un placeholder
+        System.err.println("ATTENTION: Image " + index + ".gif non trouvée dans le classpath");
+        return createPlaceholderImage(index);
+    }
+
+    /**
+     * Crée une image de remplacement en cas d'échec de chargement
+     */
+    private Image createPlaceholderImage(int index) {
+        BufferedImage placeholder = new BufferedImage(CELL_SIZE, CELL_SIZE, BufferedImage.TYPE_INT_RGB);
+        Graphics g = placeholder.getGraphics();
+        
+        // Couleur de fond selon le type
+        if (index == DRAW_MINE) {
+            g.setColor(java.awt.Color.RED);
+            g.fillRect(0, 0, CELL_SIZE, CELL_SIZE);
+            g.setColor(java.awt.Color.BLACK);
+            g.drawString("*", 5, 12);
+        } else if (index == DRAW_COVER) {
+            g.setColor(java.awt.Color.LIGHT_GRAY);
+            g.fillRect(0, 0, CELL_SIZE, CELL_SIZE);
+            g.setColor(java.awt.Color.GRAY);
+            g.drawRect(0, 0, CELL_SIZE - 1, CELL_SIZE - 1);
+        } else if (index == DRAW_MARK) {
+            g.setColor(java.awt.Color.YELLOW);
+            g.fillRect(0, 0, CELL_SIZE, CELL_SIZE);
+            g.setColor(java.awt.Color.RED);
+            g.drawString("F", 4, 12);
+        } else if (index == DRAW_WRONG_MARK) {
+            g.setColor(java.awt.Color.ORANGE);
+            g.fillRect(0, 0, CELL_SIZE, CELL_SIZE);
+            g.setColor(java.awt.Color.BLACK);
+            g.drawString("X", 4, 12);
+        } else {
+            // Cases numérotées (0-8)
+            g.setColor(java.awt.Color.WHITE);
+            g.fillRect(0, 0, CELL_SIZE, CELL_SIZE);
+            g.setColor(java.awt.Color.BLACK);
+            g.drawRect(0, 0, CELL_SIZE - 1, CELL_SIZE - 1);
+            if (index > 0 && index < 9) {
+                // Couleurs différentes selon le chiffre
+                java.awt.Color[] colors = {
+                    java.awt.Color.BLACK,  // 0
+                    java.awt.Color.BLUE,   // 1
+                    java.awt.Color.GREEN,  // 2
+                    java.awt.Color.RED,    // 3
+                    new java.awt.Color(0, 0, 128),    // 4 - Bleu foncé
+                    new java.awt.Color(128, 0, 0),    // 5 - Rouge foncé
+                    java.awt.Color.CYAN,   // 6
+                    java.awt.Color.BLACK,  // 7
+                    java.awt.Color.GRAY    // 8
+                };
+                g.setColor(colors[index]);
+                g.drawString(String.valueOf(index), 4, 12);
+            }
+        }
+        
+        g.dispose();
+        return placeholder;
     }
 
 

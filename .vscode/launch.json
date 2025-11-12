@@ -2,6 +2,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "MaintenanceScheduler",
+            "request": "launch",
+            "mainClass": "maintenance.MaintenanceScheduler",
+            "projectName": "JeuMines"
+        },
+        {
+            "type": "java",
+            "name": "MultiplayerMines",
+            "request": "launch",
+            "mainClass": "main.java.mines.MultiplayerMines",
+            "projectName": "JeuMines"
+        },
+        {
+            "type": "java",
             "name": "Mines",
             "request": "launch",
             "mainClass": "main.java.mines.Mines",
