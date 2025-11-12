@@ -1,3 +1,7 @@
 mines\Board$MinesAdapter.class
 mines\Board.class
+mines\MultiplayerMines.class
+mines\MultiplayerBoard.class
 mines\Mines.class
+mines\MultiplayerBoard$Player.class
+mines\MultiplayerBoard$MinesAdapter.class

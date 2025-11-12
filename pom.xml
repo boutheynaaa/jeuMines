@@ -42,6 +42,16 @@
                     <include>**/*.jpg</include>
                 </includes>
             </resource>
+            <!-- Also include images from images folder -->
+            <resource>
+                <directory>images</directory>
+                <targetPath>images</targetPath>
+                <includes>
+                    <include>**/*.gif</include>
+                    <include>**/*.png</include>
+                    <include>**/*.jpg</include>
+                </includes>
+            </resource>
         </resources>
 
         <plugins>
@@ -120,9 +130,19 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>mines.Mines</mainClass>
+                            <mainClass>mines.MultiplayerMines</mainClass>
                         </manifest>
                     </archive>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Exec Plugin for running the application -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.2</version>
+                <configuration>
+                    <mainClass>mines.MultiplayerMines</mainClass>
                 </configuration>
             </plugin>
         </plugins>

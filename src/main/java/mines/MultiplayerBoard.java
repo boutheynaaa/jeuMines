@@ -1,7 +1,6 @@
 package mines;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.MouseAdapter;
@@ -14,6 +13,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+/**
+ * Plateau de jeu pour le mode multijoueur
+ * Extends JPanel pour une implémentation indépendante du mode solo
+ */
 public class MultiplayerBoard extends JPanel {
     private static final long serialVersionUID = 6195235521361212180L;
     
@@ -42,12 +45,18 @@ public class MultiplayerBoard extends JPanel {
     private int all_cells;
     private JLabel statusbar;
     
-    // Multiplayer features
+    // Attributs multijoueur
     private Player[] players;
     private int currentPlayerIndex;
-    private Map<Integer, Integer> cellOwners; // Maps cell position to player index
+    private Map<Integer, Integer> cellOwners; // Position -> Index du joueur
     private boolean multiplayerMode;
 
+    /**
+     * Constructeur
+     * @param statusbar Barre de statut pour afficher les informations
+     * @param multiplayer True pour activer le mode multijoueur
+     * @param numPlayers Nombre de joueurs (2-4)
+     */
     public MultiplayerBoard(JLabel statusbar, boolean multiplayer, int numPlayers) {
         this.statusbar = statusbar;
         this.multiplayerMode = multiplayer;
@@ -62,8 +71,10 @@ public class MultiplayerBoard extends JPanel {
         img = new Image[NUM_IMAGES];
 
         for (int i = 0; i < NUM_IMAGES; i++) {
-            img[i] = (new ImageIcon(getClass().getClassLoader()
-                    .getResource("images/" + i + ".gif"))).getImage();
+            var imgURL = getClass().getClassLoader().getResource("images/" + i + ".gif");
+            if (imgURL != null) {
+                img[i] = (new ImageIcon(imgURL)).getImage();
+            }
         }
 
         setDoubleBuffered(true);
@@ -71,6 +82,9 @@ public class MultiplayerBoard extends JPanel {
         newGame();
     }
 
+    /**
+     * Initialise les joueurs avec leurs couleurs
+     */
     private void initializePlayers(int numPlayers) {
         players = new Player[numPlayers];
         Color[] colors = {Color.RED, Color.BLUE, Color.GREEN, Color.ORANGE};
@@ -82,6 +96,9 @@ public class MultiplayerBoard extends JPanel {
         currentPlayerIndex = 0;
     }
 
+    /**
+     * Démarre une nouvelle partie
+     */
     public void newGame() {
         Random random;
         int current_col;
@@ -120,154 +137,144 @@ public class MultiplayerBoard extends JPanel {
                 field[position] = COVERED_MINE_CELL;
                 i++;
 
+                // Incrémenter les cases adjacentes
                 if (current_col > 0) { 
                     cell = position - 1 - cols;
-                    if (cell >= 0)
-                        if (field[cell] != COVERED_MINE_CELL)
-                            field[cell] += 1;
+                    if (cell >= 0 && field[cell] != COVERED_MINE_CELL)
+                        field[cell] += 1;
                     cell = position - 1;
-                    if (cell >= 0)
-                        if (field[cell] != COVERED_MINE_CELL)
-                            field[cell] += 1;
-
+                    if (cell >= 0 && field[cell] != COVERED_MINE_CELL)
+                        field[cell] += 1;
                     cell = position + cols - 1;
-                    if (cell < all_cells)
-                        if (field[cell] != COVERED_MINE_CELL)
-                            field[cell] += 1;
+                    if (cell < all_cells && field[cell] != COVERED_MINE_CELL)
+                        field[cell] += 1;
                 }
 
                 cell = position - cols;
-                if (cell >= 0)
-                    if (field[cell] != COVERED_MINE_CELL)
-                        field[cell] += 1;
+                if (cell >= 0 && field[cell] != COVERED_MINE_CELL)
+                    field[cell] += 1;
                 cell = position + cols;
-                if (cell < all_cells)
-                    if (field[cell] != COVERED_MINE_CELL)
-                        field[cell] += 1;
+                if (cell < all_cells && field[cell] != COVERED_MINE_CELL)
+                    field[cell] += 1;
 
                 if (current_col < (cols - 1)) {
                     cell = position - cols + 1;
-                    if (cell >= 0)
-                        if (field[cell] != COVERED_MINE_CELL)
-                            field[cell] += 1;
+                    if (cell >= 0 && field[cell] != COVERED_MINE_CELL)
+                        field[cell] += 1;
                     cell = position + cols + 1;
-                    if (cell < all_cells)
-                        if (field[cell] != COVERED_MINE_CELL)
-                            field[cell] += 1;
+                    if (cell < all_cells && field[cell] != COVERED_MINE_CELL)
+                        field[cell] += 1;
                     cell = position + 1;
-                    if (cell < all_cells)
-                        if (field[cell] != COVERED_MINE_CELL)
-                            field[cell] += 1;
+                    if (cell < all_cells && field[cell] != COVERED_MINE_CELL)
+                        field[cell] += 1;
                 }
             }
         }
     }
 
+    /**
+     * Découvre les cases vides adjacentes de manière récursive
+     */
     public void find_empty_cells(int j) {
         int current_col = j % cols;
         int cell;
 
         if (current_col > 0) { 
             cell = j - cols - 1;
-            if (cell >= 0)
-                if (field[cell] > MINE_CELL) {
-                    field[cell] -= COVER_FOR_CELL;
-                    if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                        cellOwners.put(cell, currentPlayerIndex);
-                        players[currentPlayerIndex].addPoints(1);
-                    }
-                    if (field[cell] == EMPTY_CELL)
-                        find_empty_cells(cell);
+            if (cell >= 0 && field[cell] > MINE_CELL) {
+                field[cell] -= COVER_FOR_CELL;
+                if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                    cellOwners.put(cell, currentPlayerIndex);
+                    players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
                 }
+                if (field[cell] == EMPTY_CELL)
+                    find_empty_cells(cell);
+            }
 
             cell = j - 1;
-            if (cell >= 0)
-                if (field[cell] > MINE_CELL) {
-                    field[cell] -= COVER_FOR_CELL;
-                    if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                        cellOwners.put(cell, currentPlayerIndex);
-                        players[currentPlayerIndex].addPoints(1);
-                    }
-                    if (field[cell] == EMPTY_CELL)
-                        find_empty_cells(cell);
+            if (cell >= 0 && field[cell] > MINE_CELL) {
+                field[cell] -= COVER_FOR_CELL;
+                if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                    cellOwners.put(cell, currentPlayerIndex);
+                    players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
                 }
+                if (field[cell] == EMPTY_CELL)
+                    find_empty_cells(cell);
+            }
 
             cell = j + cols - 1;
-            if (cell < all_cells)
-                if (field[cell] > MINE_CELL) {
-                    field[cell] -= COVER_FOR_CELL;
-                    if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                        cellOwners.put(cell, currentPlayerIndex);
-                        players[currentPlayerIndex].addPoints(1);
-                    }
-                    if (field[cell] == EMPTY_CELL)
-                        find_empty_cells(cell);
+            if (cell < all_cells && field[cell] > MINE_CELL) {
+                field[cell] -= COVER_FOR_CELL;
+                if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                    cellOwners.put(cell, currentPlayerIndex);
+                    players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
                 }
+                if (field[cell] == EMPTY_CELL)
+                    find_empty_cells(cell);
+            }
         }
 
         cell = j - cols;
-        if (cell >= 0)
-            if (field[cell] > MINE_CELL) {
-                field[cell] -= COVER_FOR_CELL;
-                if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                    cellOwners.put(cell, currentPlayerIndex);
-                    players[currentPlayerIndex].addPoints(1);
-                }
-                if (field[cell] == EMPTY_CELL)
-                    find_empty_cells(cell);
+        if (cell >= 0 && field[cell] > MINE_CELL) {
+            field[cell] -= COVER_FOR_CELL;
+            if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                cellOwners.put(cell, currentPlayerIndex);
+                players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
             }
+            if (field[cell] == EMPTY_CELL)
+                find_empty_cells(cell);
+        }
 
         cell = j + cols;
-        if (cell < all_cells)
-            if (field[cell] > MINE_CELL) {
-                field[cell] -= COVER_FOR_CELL;
-                if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                    cellOwners.put(cell, currentPlayerIndex);
-                    players[currentPlayerIndex].addPoints(1);
-                }
-                if (field[cell] == EMPTY_CELL)
-                    find_empty_cells(cell);
+        if (cell < all_cells && field[cell] > MINE_CELL) {
+            field[cell] -= COVER_FOR_CELL;
+            if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                cellOwners.put(cell, currentPlayerIndex);
+                players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
             }
+            if (field[cell] == EMPTY_CELL)
+                find_empty_cells(cell);
+        }
 
         if (current_col < (cols - 1)) {
             cell = j - cols + 1;
-            if (cell >= 0)
-                if (field[cell] > MINE_CELL) {
-                    field[cell] -= COVER_FOR_CELL;
-                    if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                        cellOwners.put(cell, currentPlayerIndex);
-                        players[currentPlayerIndex].addPoints(1);
-                    }
-                    if (field[cell] == EMPTY_CELL)
-                        find_empty_cells(cell);
+            if (cell >= 0 && field[cell] > MINE_CELL) {
+                field[cell] -= COVER_FOR_CELL;
+                if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                    cellOwners.put(cell, currentPlayerIndex);
+                    players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
                 }
+                if (field[cell] == EMPTY_CELL)
+                    find_empty_cells(cell);
+            }
 
             cell = j + cols + 1;
-            if (cell < all_cells)
-                if (field[cell] > MINE_CELL) {
-                    field[cell] -= COVER_FOR_CELL;
-                    if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                        cellOwners.put(cell, currentPlayerIndex);
-                        players[currentPlayerIndex].addPoints(1);
-                    }
-                    if (field[cell] == EMPTY_CELL)
-                        find_empty_cells(cell);
+            if (cell < all_cells && field[cell] > MINE_CELL) {
+                field[cell] -= COVER_FOR_CELL;
+                if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                    cellOwners.put(cell, currentPlayerIndex);
+                    players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
                 }
+                if (field[cell] == EMPTY_CELL)
+                    find_empty_cells(cell);
+            }
 
             cell = j + 1;
-            if (cell < all_cells)
-                if (field[cell] > MINE_CELL) {
-                    field[cell] -= COVER_FOR_CELL;
-                    if (multiplayerMode && !cellOwners.containsKey(cell)) {
-                        cellOwners.put(cell, currentPlayerIndex);
-                        players[currentPlayerIndex].addPoints(1);
-                    }
-                    if (field[cell] == EMPTY_CELL)
-                        find_empty_cells(cell);
+            if (cell < all_cells && field[cell] > MINE_CELL) {
+                field[cell] -= COVER_FOR_CELL;
+                if (multiplayerMode && !cellOwners.containsKey(cell)) {
+                    cellOwners.put(cell, currentPlayerIndex);
+                    players[currentPlayerIndex].addPoints(field[cell] == EMPTY_CELL ? 1 : field[cell]);
                 }
+                if (field[cell] == EMPTY_CELL)
+                    find_empty_cells(cell);
+            }
         }
     }
 
+    /**
+     * Met à jour la barre de statut
+     */
     private void updateStatusBar() {
         if (multiplayerMode) {
             StringBuilder sb = new StringBuilder();
@@ -282,11 +289,27 @@ public class MultiplayerBoard extends JPanel {
         }
     }
 
+    /**
+     * Passe au joueur suivant
+     */
     private void nextPlayer() {
         if (multiplayerMode) {
             currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
             updateStatusBar();
         }
+    }
+
+    /**
+     * Détermine le gagnant
+     */
+    private Player getWinner() {
+        Player winner = players[0];
+        for (Player p : players) {
+            if (p.getScore() > winner.getScore()) {
+                winner = p;
+            }
+        }
+        return winner;
     }
 
     @Override
@@ -325,7 +348,7 @@ public class MultiplayerBoard extends JPanel {
 
                 g.drawImage(img[cell], (j * CELL_SIZE), (i * CELL_SIZE), this);
                 
-                // Draw colored border for multiplayer cells
+                // Dessiner la bordure colorée pour les cases en mode multijoueur
                 if (multiplayerMode && cellOwners.containsKey(pos) && field[pos] < COVER_FOR_CELL) {
                     int owner = cellOwners.get(pos);
                     g.setColor(players[owner].getColor());
@@ -349,16 +372,9 @@ public class MultiplayerBoard extends JPanel {
         }
     }
 
-    private Player getWinner() {
-        Player winner = players[0];
-        for (Player p : players) {
-            if (p.getScore() > winner.getScore()) {
-                winner = p;
-            }
-        }
-        return winner;
-    }
-
+    /**
+     * Gère les événements de la souris
+     */
     class MinesAdapter extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
@@ -379,6 +395,7 @@ public class MultiplayerBoard extends JPanel {
             if ((x < cols * CELL_SIZE) && (y < rows * CELL_SIZE)) {
                 int pos = (cRow * cols) + cCol;
                 
+                // Clic droit : marquer/démarquer
                 if (e.getButton() == MouseEvent.BUTTON3) {
                     if (field[pos] > MINE_CELL) {
                         rep = true;
@@ -397,20 +414,21 @@ public class MultiplayerBoard extends JPanel {
                             updateStatusBar();
                         }
                     }
-                } else {
+                } 
+                // Clic gauche : découvrir
+                else {
                     if (field[pos] > COVERED_MINE_CELL) {
                         return;
                     }
 
-                    if ((field[pos] > MINE_CELL) &&
-                        (field[pos] < MARKED_MINE_CELL)) {
-
+                    if ((field[pos] > MINE_CELL) && (field[pos] < MARKED_MINE_CELL)) {
                         field[pos] -= COVER_FOR_CELL;
                         rep = true;
 
                         if (multiplayerMode && !cellOwners.containsKey(pos)) {
                             cellOwners.put(pos, currentPlayerIndex);
-                            players[currentPlayerIndex].addPoints(field[pos] == EMPTY_CELL ? 1 : field[pos] + 1);
+                            int points = field[pos] == EMPTY_CELL ? 1 : (field[pos] == MINE_CELL ? -10 : field[pos] + 1);
+                            players[currentPlayerIndex].addPoints(points);
                         }
 
                         if (field[pos] == MINE_CELL) {
@@ -419,6 +437,7 @@ public class MultiplayerBoard extends JPanel {
                                 players[currentPlayerIndex].addPoints(-10);
                             }
                         }
+                        
                         if (field[pos] == EMPTY_CELL) {
                             find_empty_cells(pos);
                         }
@@ -437,7 +456,9 @@ public class MultiplayerBoard extends JPanel {
         }
     }
     
-    // Inner class for Player
+    /**
+     * Classe interne représentant un joueur
+     */
     class Player {
         private String name;
         private int score;
