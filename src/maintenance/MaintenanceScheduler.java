@@ -4,6 +4,15 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import maintenance.MaintenanceScheduler.CategorieTemps;
+import maintenance.MaintenanceScheduler.Impact;
+import maintenance.MaintenanceScheduler.Priorite;
+import maintenance.MaintenanceScheduler.RangImportance;
+import maintenance.MaintenanceScheduler.RapportMaintenance;
+import maintenance.MaintenanceScheduler.StatutTache;
+import maintenance.MaintenanceScheduler.Tache;
+import maintenance.MaintenanceScheduler.TypeTache;
+
 /**
  * Classe principale pour l'algorithme de maintenance non déterministe.
  * Implémente les 7 phases décrites dans le document algorithmique.
@@ -552,4 +561,31 @@ public class MaintenanceScheduler {
             e.printStackTrace();
         }
     }
+        /**
+ * Exécute l'algorithme avec un analyseur de projet personnalisé
+ */
+public static RapportMaintenance executerAlgorithmeAvecAnalyseur(
+        ProjectAnalyzer analyzer, 
+        ProjectInfo projectInfo) {
+    
+    System.out.println("=== DÉMARRAGE DE L'ALGORITHME ===\n");
+    
+    // Phase 1: Utiliser l'analyseur spécifique
+    List<Tache> taches = analyzer.analyzeProject(projectInfo.getPath());
+    System.out.println("✓ Phase 1: " + taches.size() + " tâches identifiées\n");
+    
+    // Phases 2-7: Algorithme standard
+    phase2_EvaluationMulticritere(taches);
+    phase3_CinqQuestions(taches);
+    phase4_CalculScores(taches);
+    List<Tache> planning = phase5_Ordonnancement(taches);
+    phase6_SuiviControle(planning);
+    RapportMaintenance rapport = phase7_GenerationRapport(planning);
+    
+    // Enrichir le rapport
+    rapport.projet = projectInfo.getName();
+    rapport.detteInitiale = projectInfo.getTechnicalDebt();
+    
+    return rapport;
+}
 }

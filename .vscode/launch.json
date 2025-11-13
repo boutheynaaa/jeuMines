@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "App",
+            "request": "launch",
+            "mainClass": "maintenance.App",
+            "projectName": "JeuMines"
+        },
+        {
+            "type": "java",
             "name": "MaintenanceScheduler",
             "request": "launch",
             "mainClass": "maintenance.MaintenanceScheduler",
